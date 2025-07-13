@@ -96,10 +96,9 @@ buttonHackear.MouseButton1Click:Connect(function()
 	local posOriginal = humanoidRootPart.Position
 
 	-- Cola no modelo enquanto ele se move
-	local seguir = true
 	local seguirConn
 	seguirConn = RunService.Heartbeat:Connect(function()
-		if seguir and modelo and modelo.PrimaryPart then
+		if modelo and modelo.PrimaryPart and humanoidRootPart then
 			local alvoPos = modelo.PrimaryPart.Position + Vector3.new(0, 0, -2)
 			humanoid:MoveTo(alvoPos)
 		end
@@ -108,15 +107,13 @@ buttonHackear.MouseButton1Click:Connect(function()
 	-- Esperar colar (muito perto)
 	repeat task.wait() until (humanoidRootPart.Position - modelo.PrimaryPart.Position).Magnitude <= 3
 
-	-- Parar de seguir
-
 	-- Interface: simulando E
 	local msg = Instance.new("TextLabel")
 	msg.Size = UDim2.new(1, 0, 0, 20)
 	msg.Position = UDim2.new(0, 0, 0, 0)
 	msg.BackgroundTransparency = 1
 	msg.TextColor3 = Color3.new(1, 1, 0)
-	msg.Text = "Segurando E (automático)......"
+	msg.Text = "Segurando E (automático)..."
 	msg.TextScaled = true
 	msg.Font = Enum.Font.SourceSansBold
 	msg.Parent = frame
@@ -125,16 +122,32 @@ buttonHackear.MouseButton1Click:Connect(function()
 	local prompt = encontrarPrompt(modelo)
 	if prompt then
 		print("Encontrado prompt:", prompt.Name, "HoldDuration:", prompt.HoldDuration)
+
+		-- Verifica distância
+		local promptPos = prompt.Parent:IsA("BasePart") and prompt.Parent.Position or modelo.PrimaryPart.Position
+		local dist = (humanoidRootPart.Position - promptPos).Magnitude
+
+		if dist > prompt.MaxActivationDistance then
+			humanoid:MoveTo(promptPos + Vector3.new(0, 0, -1))
+			repeat task.wait() until (humanoidRootPart.Position - promptPos).Magnitude <= prompt.MaxActivationDistance
+		end
+
+		-- Simula segurar E
 		prompt:InputHoldBegin()
 		task.wait(prompt.HoldDuration + 0.1)
 		prompt:InputHoldEnd()
 	else
+		warn("❌ Nenhum prompt encontrado no modelo.")
 		task.wait(2)
 	end
 
 	msg.Text = "✅ Hack concluído!"
 	task.wait(1)
 	msg:Destroy()
+
+	-- Parar de seguir
+	if seguirConn then seguirConn:Disconnect() end
+	seguirConn = nil
 
 	-- Voltar ao ponto original
 	humanoid:MoveTo(posOriginal)
