@@ -116,7 +116,7 @@ buttonHackear.MouseButton1Click:Connect(function()
 	msg.Position = UDim2.new(0, 0, 0, 0)
 	msg.BackgroundTransparency = 1
 	msg.TextColor3 = Color3.new(1, 1, 0)
-	msg.Text = "Segurando E (automático)..."
+	msg.Text = "Segurando E (automático)......"
 	msg.TextScaled = true
 	msg.Font = Enum.Font.SourceSansBold
 	msg.Parent = frame
