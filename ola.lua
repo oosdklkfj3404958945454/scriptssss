@@ -31,6 +31,12 @@ button.Parent = frame
 
 local pasta = workspace:FindFirstChild("RenderedMovingAnimals")
 
+if not pasta then
+    warn("Pasta 'RenderedMovingAnimals' não encontrada na workspace.")
+    return
+end
+
+
 local function encontrarPrimeiroModel(pasta)
 	for _, obj in ipairs(pasta:GetChildren()) do
 		if obj:IsA("Model") and obj.PrimaryPart then
