@@ -30,96 +30,109 @@ button.Text = "Hackear Animal"
 button.Parent = frame
 
 local pasta = workspace:FindFirstChild("RenderedMovingAnimals")
-
 if not pasta then
-    warn("Pasta 'RenderedMovingAnimals' não encontrada na workspace.")
+    warn("A pasta 'RenderedMovingAnimals' não foi encontrada no workspace!")
+    button.Active = false
+    button.Text = "Pasta não encontrada"
+    button.BackgroundColor3 = Color3.fromRGB(100, 30, 30)
     return
 end
 
-
 local function encontrarPrimeiroModel(pasta)
-	for _, obj in ipairs(pasta:GetChildren()) do
-		if obj:IsA("Model") and obj.PrimaryPart then
-			return obj
-		end
-	end
-	return nil
+    for _, obj in ipairs(pasta:GetChildren()) do
+        if obj:IsA("Model") and obj.PrimaryPart then
+            return obj
+        end
+    end
+    return nil
 end
 
 local function encontrarPrimeiroScript(pasta)
-	for _, obj in ipairs(pasta:GetDescendants()) do
-		if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-			return obj
-		end
-	end
-	return nil
+    for _, obj in ipairs(pasta:GetDescendants()) do
+        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+            return obj
+        end
+    end
+    return nil
 end
 
 button.MouseButton1Click:Connect(function()
-	local modelo = encontrarPrimeiroModel(pasta)
-	local scriptAlvo = encontrarPrimeiroScript(pasta)
+    button.Active = false
+    button.Text = "Processando..."
+    
+    local modelo = encontrarPrimeiroModel(pasta)
+    local scriptAlvo = encontrarPrimeiroScript(pasta)
 
-	if not modelo or not scriptAlvo then
-		warn("Nenhum modelo ou script válido encontrado!")
-		return
-	end
+    if not modelo or not scriptAlvo then
+        warn("Nenhum modelo ou script válido encontrado!")
+        button.Active = true
+        button.Text = "Hackear Animal"
+        return
+    end
 
-	local posOriginal = humanoidRootPart.Position
+    local posOriginal = humanoidRootPart.Position
 
-	local codigoOriginal
-	local success, result = pcall(function()
-		return scriptAlvo.Source
-	end)
-	if success then
-		codigoOriginal = result
-	else
-		warn("Erro ao acessar o código original!")
-		return
-	end
+    local codigoOriginal
+    local success, result = pcall(function()
+        return scriptAlvo.Source
+    end)
+    if success then
+        codigoOriginal = result
+    else
+        warn("Erro ao acessar o código original!")
+        button.Active = true
+        button.Text = "Hackear Animal"
+        return
+    end
 
-	humanoid:MoveTo(modelo.PrimaryPart.Position)
+    humanoid:MoveTo(modelo.PrimaryPart.Position)
 
-	local chegou = false
-	local conn
-	conn = humanoid.MoveToFinished:Connect(function(reached)
-		chegou = true
-		conn:Disconnect()
-	end)
-	repeat task.wait() until chegou
+    local chegou = false
+    local conn
+    conn = humanoid.MoveToFinished:Connect(function(reached)
+        chegou = true
+        conn:Disconnect()
+    end)
+    repeat task.wait() until chegou
 
-	local msg = Instance.new("TextLabel", frame)
-	msg.Size = UDim2.new(1, 0, 0, 20)
-	msg.Position = UDim2.new(0, 0, 0, 0)
-	msg.BackgroundTransparency = 1
-	msg.TextColor3 = Color3.new(1, 1, 0)
-	msg.Text = "Segurando E..."
-	msg.TextScaled = true
-	msg.Parent = frame
+    local msg = Instance.new("TextLabel")
+    msg.Size = UDim2.new(1, 0, 0, 20)
+    msg.Position = UDim2.new(0, 0, 0, 0)
+    msg.BackgroundTransparency = 1
+    msg.TextColor3 = Color3.new(1, 1, 0)
+    msg.Text = "Segurando E..."
+    msg.TextScaled = true
+    msg.Parent = frame
 
-	task.wait(2)
-	msg:Destroy()
+    task.wait(2)
+    msg:Destroy()
 
-	humanoid:MoveTo(posOriginal)
+    humanoid:MoveTo(posOriginal)
 
-	chegou = false
-	conn = humanoid.MoveToFinished:Connect(function(reached)
-		chegou = true
-		conn:Disconnect()
-	end)
-	repeat task.wait() until chegou
+    chegou = false
+    conn = humanoid.MoveToFinished:Connect(function(reached)
+        chegou = true
+        conn:Disconnect()
+    end)
+    repeat task.wait() until chegou
 
-	local success2, novoCodigo = pcall(function()
-		return scriptAlvo.Source
-	end)
+    local success2, novoCodigo = pcall(function()
+        return scriptAlvo.Source
+    end)
 
-	if not success2 then
-		warn("Erro ao verificar o código depois da interação.")
-		return
-	end
+    if not success2 then
+        warn("Erro ao verificar o código depois da interação.")
+        button.Active = true
+        button.Text = "Hackear Animal"
+        return
+    end
 
-	if novoCodigo ~= codigoOriginal then
-		warn("⚠️ O código do script foi ALTERADO!")
-	else
-		print("✅ O código do script permanece o mesmo.")
-	end
+    if novoCodigo ~= codigoOriginal then
+        warn("⚠️ O código do script foi ALTERADO!")
+    else
+        print("✅ O código do script permanece o mesmo.")
+    end
+
+    button.Active = true
+    button.Text = "Hackear Animal"
 end)
