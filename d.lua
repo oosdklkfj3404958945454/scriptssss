@@ -63,6 +63,15 @@ local function encontrarUltimoModel(pasta)
 	return modelos[#modelos]
 end
 
+local function encontrarPrompt(modelo)
+	for _, descendente in ipairs(modelo:GetDescendants()) do
+		if descendente:IsA("ProximityPrompt") then
+			return descendente
+		end
+	end
+	return nil
+end
+
 -- Flag para evitar múltiplas execuções
 local emExecucao = false
 
@@ -113,7 +122,7 @@ buttonHackear.MouseButton1Click:Connect(function()
 	msg.Parent = frame
 
 	-- Busca recursiva por um ProximityPrompt em qualquer lugar do modelo
-	local prompt = modelo:FindFirstChildWhichIsA("ProximityPrompt", true)
+	local prompt = encontrarPrompt(modelo)
 	if prompt then
 		print("Encontrado prompt:", prompt.Name, "HoldDuration:", prompt.HoldDuration)
 		prompt:InputHoldBegin()
