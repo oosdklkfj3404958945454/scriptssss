@@ -1,3 +1,4 @@
+local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -40,7 +41,6 @@ buttonArquivos.TextSize = 20
 buttonArquivos.Text = "Arquivos da Pasta"
 buttonArquivos.Parent = frame
 
--- Pasta dos animais
 local pasta = workspace:FindFirstChild("RenderedMovingAnimals")
 
 local function encontrarPrimeiroModel(pasta)
@@ -53,7 +53,58 @@ local function encontrarPrimeiroModel(pasta)
 	return nil
 end
 
--- Botão de hackear
+-- "Pressionar e segurar E"
+local function esperarSegurarTecla(tecla, tempoSegurar)
+	local tempoPressionado = 0
+	local segurando = false
+	local interrompido = false
+
+	local function reset()
+		tempoPressionado = 0
+		segurando = false
+	end
+
+	local inputBegin, inputEnd
+
+	local done = Instance.new("BindableEvent")
+
+	inputBegin = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then return end
+		if input.KeyCode == tecla then
+			segurando = true
+		end
+	end)
+
+	inputEnd = UserInputService.InputEnded:Connect(function(input)
+		if input.KeyCode == tecla then
+			segurando = false
+			interrompido = true
+			done:Fire(false)
+		end
+	end)
+
+	task.spawn(function()
+		while tempoPressionado < tempoSegurar do
+			if not segurando then
+				break
+			end
+			task.wait(0.05)
+			tempoPressionado += 0.05
+		end
+		if segurando and not interrompido then
+			done:Fire(true)
+		end
+	end)
+
+	local sucesso = done.Event:Wait()
+
+	inputBegin:Disconnect()
+	inputEnd:Disconnect()
+
+	return sucesso
+end
+
+-- Hackear
 buttonHackear.MouseButton1Click:Connect(function()
 	if not pasta then
 		warn("Pasta 'RenderedMovingAnimals' não encontrada na workspace.")
@@ -72,7 +123,6 @@ buttonHackear.MouseButton1Click:Connect(function()
 	print("Indo até o modelo:", modelo.Name)
 	humanoid:MoveTo(destino)
 
-	-- Esperar chegar no destino
 	local chegou = false
 	local conn
 	conn = humanoid.MoveToFinished:Connect(function(reached)
@@ -81,34 +131,39 @@ buttonHackear.MouseButton1Click:Connect(function()
 	end)
 	repeat task.wait() until chegou
 
-	-- Simular "Segurar E"
+	-- Interface de instrução
 	local msg = Instance.new("TextLabel")
 	msg.Size = UDim2.new(1, 0, 0, 20)
 	msg.Position = UDim2.new(0, 0, 0, 0)
 	msg.BackgroundTransparency = 1
 	msg.TextColor3 = Color3.new(1, 1, 0)
-	msg.Text = "Segurando E..."
+	msg.Text = "Segure E para hackear..."
 	msg.TextScaled = true
 	msg.Font = Enum.Font.SourceSansBold
 	msg.Parent = frame
 
-	task.wait(2)
+	local sucesso = esperarSegurarTecla(Enum.KeyCode.E, 2)
+
 	msg:Destroy()
 
-	-- Voltar à posição original
+	if sucesso then
+		print("✅ Hack concluído com sucesso!")
+	else
+		warn("❌ Hack cancelado! Tecla solta antes do tempo.")
+	end
+
+	-- Voltar
 	humanoid:MoveTo(posOriginal)
 	local voltou = false
 	local conn2
-	conn2 = humanoid.MoveToFinished:Connect(function(reached)
+	conn2 = humanoid.MoveToFinished:Connect(function()
 		voltou = true
 		conn2:Disconnect()
 	end)
 	repeat task.wait() until voltou
-
-	print("Interação com", modelo.Name, "concluída.")
 end)
 
--- Botão de mostrar arquivos
+-- Mostrar arquivos da pasta
 buttonArquivos.MouseButton1Click:Connect(function()
 	if not pasta then
 		warn("Pasta 'RenderedMovingAnimals' não encontrada na workspace.")
