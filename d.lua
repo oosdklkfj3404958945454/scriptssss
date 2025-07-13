@@ -6,6 +6,13 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
+-- Atualiza referência do personagem em caso de morte/reset
+player.CharacterAdded:Connect(function(newChar)
+	character = newChar
+	humanoid = newChar:WaitForChild("Humanoid")
+	humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+end)
+
 -- GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "RenderSpyGui"
@@ -56,16 +63,24 @@ local function encontrarUltimoModel(pasta)
 	return modelos[#modelos]
 end
 
+-- Flag para evitar múltiplas execuções
+local emExecucao = false
+
 -- Hackear (seguindo colado)
 buttonHackear.MouseButton1Click:Connect(function()
+	if emExecucao then return end
+	emExecucao = true
+
 	if not pasta then
 		warn("Pasta 'RenderedMovingAnimals' não encontrada.")
+		emExecucao = false
 		return
 	end
 
 	local modelo = encontrarUltimoModel(pasta)
 	if not modelo then
 		warn("Nenhum modelo com PrimaryPart encontrado.")
+		emExecucao = false
 		return
 	end
 
@@ -76,15 +91,13 @@ buttonHackear.MouseButton1Click:Connect(function()
 	local seguirConn
 	seguirConn = RunService.Heartbeat:Connect(function()
 		if seguir and modelo and modelo.PrimaryPart then
-			local alvoPos = modelo.PrimaryPart.Position + Vector3.new(0, 0, -2) -- Fica atrás
+			local alvoPos = modelo.PrimaryPart.Position + Vector3.new(0, 0, -2)
 			humanoid:MoveTo(alvoPos)
 		end
 	end)
 
 	-- Esperar colar (muito perto)
-	repeat
-		task.wait()
-	until (humanoidRootPart.Position - modelo.PrimaryPart.Position).Magnitude <= 3
+	repeat task.wait() until (humanoidRootPart.Position - modelo.PrimaryPart.Position).Magnitude <= 3
 
 	-- Parar de seguir
 	seguir = false
@@ -101,14 +114,14 @@ buttonHackear.MouseButton1Click:Connect(function()
 	msg.Font = Enum.Font.SourceSansBold
 	msg.Parent = frame
 
-	-- Se tiver um ProximityPrompt, simula a tecla E
-	local prompt = modelo.PrimaryPart:FindFirstChildOfClass("ProximityPrompt")
+	-- Busca recursiva por um ProximityPrompt em qualquer lugar do modelo
+	local prompt = modelo:FindFirstChildWhichIsA("ProximityPrompt", true)
 	if prompt then
+		print("Encontrado prompt:", prompt.Name, "HoldDuration:", prompt.HoldDuration)
 		prompt:InputHoldBegin()
-		task.wait(2)
+		task.wait(prompt.HoldDuration + 0.1)
 		prompt:InputHoldEnd()
 	else
-		-- Sem prompt: só espera mesmo
 		task.wait(2)
 	end
 
@@ -118,6 +131,8 @@ buttonHackear.MouseButton1Click:Connect(function()
 
 	-- Voltar ao ponto original
 	humanoid:MoveTo(posOriginal)
+
+	emExecucao = false
 end)
 
 -- Mostrar arquivos
