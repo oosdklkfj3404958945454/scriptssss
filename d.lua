@@ -100,7 +100,6 @@ buttonHackear.MouseButton1Click:Connect(function()
 	repeat task.wait() until (humanoidRootPart.Position - modelo.PrimaryPart.Position).Magnitude <= 3
 
 	-- Parar de seguir
-	seguir = false
 	if seguirConn then seguirConn:Disconnect() end
 
 	-- Interface: simulando E
