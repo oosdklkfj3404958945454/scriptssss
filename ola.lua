@@ -4,13 +4,14 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
+-- Interface
 local gui = Instance.new("ScreenGui")
 gui.Name = "RenderSpyGui"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 120) -- Aumentei a altura pra caber os 2 botões
+frame.Size = UDim2.new(0, 250, 0, 120)
 frame.Position = UDim2.new(0, 20, 0, 20)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BackgroundTransparency = 0.2
@@ -39,9 +40,11 @@ buttonArquivos.TextSize = 20
 buttonArquivos.Text = "Arquivos da Pasta"
 buttonArquivos.Parent = frame
 
+-- Pasta dos animais
 local pasta = workspace:FindFirstChild("RenderedMovingAnimals")
 
 local function encontrarPrimeiroModel(pasta)
+	if not pasta then return nil end
 	for _, obj in ipairs(pasta:GetChildren()) do
 		if obj:IsA("Model") and obj.PrimaryPart then
 			return obj
@@ -50,15 +53,7 @@ local function encontrarPrimeiroModel(pasta)
 	return nil
 end
 
-local function encontrarPrimeiroScript(pasta)
-	for _, obj in ipairs(pasta:GetDescendants()) do
-		if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-			return obj
-		end
-	end
-	return nil
-end
-
+-- Botão de hackear
 buttonHackear.MouseButton1Click:Connect(function()
 	if not pasta then
 		warn("Pasta 'RenderedMovingAnimals' não encontrada na workspace.")
@@ -66,33 +61,18 @@ buttonHackear.MouseButton1Click:Connect(function()
 	end
 
 	local modelo = encontrarPrimeiroModel(pasta)
-	local scriptAlvo = encontrarPrimeiroScript(pasta)
-
 	if not modelo then
-		warn("Nenhum modelo válido encontrado!")
-		return
-	end
-
-	if not scriptAlvo then
-		warn("Nenhum script válido encontrado!")
+		warn("Nenhum modelo válido com PrimaryPart encontrado!")
 		return
 	end
 
 	local posOriginal = humanoidRootPart.Position
+	local destino = modelo.PrimaryPart.Position
 
-	local codigoOriginal
-	local success, result = pcall(function()
-		return scriptAlvo.Source
-	end)
-	if success then
-		codigoOriginal = result
-	else
-		warn("Erro ao acessar o código original!")
-		return
-	end
+	print("Indo até o modelo:", modelo.Name)
+	humanoid:MoveTo(destino)
 
-	humanoid:MoveTo(modelo.PrimaryPart.Position)
-
+	-- Esperar chegar no destino
 	local chegou = false
 	local conn
 	conn = humanoid.MoveToFinished:Connect(function(reached)
@@ -101,52 +81,42 @@ buttonHackear.MouseButton1Click:Connect(function()
 	end)
 	repeat task.wait() until chegou
 
-	local msg = Instance.new("TextLabel", frame)
+	-- Simular "Segurar E"
+	local msg = Instance.new("TextLabel")
 	msg.Size = UDim2.new(1, 0, 0, 20)
 	msg.Position = UDim2.new(0, 0, 0, 0)
 	msg.BackgroundTransparency = 1
 	msg.TextColor3 = Color3.new(1, 1, 0)
 	msg.Text = "Segurando E..."
 	msg.TextScaled = true
+	msg.Font = Enum.Font.SourceSansBold
 	msg.Parent = frame
 
 	task.wait(2)
 	msg:Destroy()
 
+	-- Voltar à posição original
 	humanoid:MoveTo(posOriginal)
-
-	chegou = false
-	conn = humanoid.MoveToFinished:Connect(function(reached)
-		chegou = true
-		conn:Disconnect()
+	local voltou = false
+	local conn2
+	conn2 = humanoid.MoveToFinished:Connect(function(reached)
+		voltou = true
+		conn2:Disconnect()
 	end)
-	repeat task.wait() until chegou
+	repeat task.wait() until voltou
 
-	local success2, novoCodigo = pcall(function()
-		return scriptAlvo.Source
-	end)
-
-	if not success2 then
-		warn("Erro ao verificar o código depois da interação.")
-		return
-	end
-
-	if novoCodigo ~= codigoOriginal then
-		warn("⚠️ O código do script foi ALTERADO!")
-	else
-		print("✅ O código do script permanece o mesmo.")
-	end
+	print("Interação com", modelo.Name, "concluída.")
 end)
 
+-- Botão de mostrar arquivos
 buttonArquivos.MouseButton1Click:Connect(function()
 	if not pasta then
 		warn("Pasta 'RenderedMovingAnimals' não encontrada na workspace.")
 		return
 	end
 
-	print("=== Arquivos na pasta 'RenderedMovingAnimals' ===")
+	print("📦 Arquivos em 'RenderedMovingAnimals':")
 	for _, obj in ipairs(pasta:GetChildren()) do
-		print(string.format("Nome: %s | Tipo: %s", obj.Name, obj.ClassName))
+		print(string.format("  🔹 Nome: %s | Tipo: %s", obj.Name, obj.ClassName))
 	end
-	print("===============================================")
 end)
