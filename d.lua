@@ -1,60 +1,75 @@
-local folder = game.Workspace:FindFirstChild("MovingAnimals")
+-- Script estilo exploit: detecta qualquer modelo próximo ao jogador
+-- mesmo sem PrimaryPart, e loga ao segurar a tecla "E"
 
-if not folder then
-    warn("❌ Pasta 'MovingAnimals' não encontrada no Workspace.")
-    return
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local hrp = player.Character or player.CharacterAdded:Wait()
+hrp = hrp:WaitForChild("HumanoidRootPart")
+
+local tecla = Enum.KeyCode.E
+local raio = 15
+local segurando = false
+local tempoInicio = 0
+
+-- Função que calcula posição média dos parts de um modelo
+local function getPosicaoMedia(modelo)
+	local soma = Vector3.new(0, 0, 0)
+	local total = 0
+
+	for _, part in ipairs(modelo:GetDescendants()) do
+		if part:IsA("BasePart") then
+			soma += part.Position
+			total += 1
+		end
+	end
+
+	if total > 0 then
+		return soma / total
+	end
+	return nil
 end
 
-local textoDetectado = {}
-local estruturaDetectada = {}
+-- Retorna o modelo mais próximo (sem precisar de PrimaryPart)
+local function modeloMaisProximo()
+	local maisPerto = nil
+	local menorDist = raio
 
--- Função para processar recursivamente
-local function processar(obj, indent)
-    indent = indent or ""
+	for _, modelo in ipairs(workspace:GetDescendants()) do
+		if modelo:IsA("Model") then
+			local pos = getPosicaoMedia(modelo)
+			if pos then
+				local dist = (hrp.Position - pos).Magnitude
+				if dist < menorDist then
+					menorDist = dist
+					maisPerto = modelo
+				end
+			end
+		end
+	end
 
-    -- Captura texto, se aplicável
-    if obj:IsA("StringValue") then
-        table.insert(textoDetectado, indent .. "📝 StringValue [" .. obj.Name .. "]: " .. obj.Value)
-
-    elseif obj:IsA("TextLabel") or obj:IsA("TextBox") then
-        table.insert(textoDetectado, indent .. "📝 GUI [" .. obj.ClassName .. " - " .. obj.Name .. "]: " .. obj.Text)
-
-    elseif obj:IsA("ModuleScript") or obj:IsA("LocalScript") then
-        local success, src = pcall(function()
-            return obj.Source
-        end)
-        if success then
-            table.insert(textoDetectado, indent .. "📜 " .. obj.ClassName .. " [" .. obj.Name .. "]:")
-            for line in src:gmatch("[^\r\n]+") do
-                table.insert(textoDetectado, indent .. "    " .. line)
-            end
-        else
-            table.insert(textoDetectado, indent .. "⚠️ " .. obj.Name .. ": código inacessível")
-        end
-    end
-
-    -- Registra estrutura
-    table.insert(estruturaDetectada, indent .. "📦 " .. obj:GetFullName())
-
-    -- Processa filhos
-    for _, child in ipairs(obj:GetChildren()) do
-        processar(child, indent .. "  ")
-    end
+	return maisPerto, menorDist
 end
 
--- Executa
-print("🔍 Verificando conteúdo da pasta 'MovingAnimals'...")
+-- Tecla pressionada
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp or input.KeyCode ~= tecla then return end
+	segurando = true
+	tempoInicio = tick()
+end)
 
-processar(folder)
+-- Tecla solta
+UserInputService.InputEnded:Connect(function(input)
+	if input.KeyCode ~= tecla or not segurando then return end
+	segurando = false
 
--- Primeiro mostra textos
-print("===== 📄 CONTEÚDO DE TEXTO DETECTADO =====")
-for _, linha in ipairs(textoDetectado) do
-    print(linha)
-end
+	local duracao = tick() - tempoInicio
+	local modelo, dist = modeloMaisProximo()
 
--- Depois mostra estrutura
-print("===== 🗂️ ESTRUTURA DA PASTA =====")
-for _, linha in ipairs(estruturaDetectada) do
-    print(linha)
-end
+	if modelo then
+		warn("[✔] Tecla 'E' segurada por " .. string.format("%.2f", duracao) ..
+			"s perto do modelo: " .. modelo:GetFullName() .. " (distância: " .. math.floor(dist) .. ")")
+	else
+		warn("[✖] Nenhum modelo próximo. Tecla 'E' segurada por " .. string.format("%.2f", duracao) .. "s")
+	end
+end)
