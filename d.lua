@@ -1,42 +1,68 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local player = Players.LocalPlayer
-local radius = 20
+-- Palavras suspeitas a serem detectadas
+local palavrasChave = {
+    "owner", "dono", "brainrot", "admin", "hack", "exploit", "player"
+}
 
--- Aguarda o personagem e o HumanoidRootPart
-local function getHRP()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("HumanoidRootPart")
+-- Função para verificar se um texto contém palavras suspeitas
+local function contemPalavraChave(texto)
+    texto = string.lower(tostring(texto))
+    for _, chave in ipairs(palavrasChave) do
+        if string.find(texto, chave) then
+            return true
+        end
+    end
+    return false
 end
 
-local function getNearbyPrompt()
-	local hrp = getHRP()
-	for _, inst in pairs(workspace:GetDescendants()) do
-		if inst:IsA("ProximityPrompt") and inst:IsDescendantOf(workspace) then
-			local part = inst.Parent
-			if part:IsA("BasePart") then
-				local dist = (part.Position - hrp.Position).Magnitude
-				if dist <= radius then
-					return inst, dist
-				end
-			end
-		end
-	end
-	return nil
+-- Função principal
+local function verificarDisplayNames()
+    local plotsFolder = workspace:FindFirstChild("Plots")
+    if not plotsFolder then
+        warn("❌ Pasta 'Plots' não encontrada.")
+        return
+    end
+
+    print("📁 Iniciando varredura dos DisplayNames dentro dos plots...\n")
+
+    for _, plot in ipairs(plotsFolder:GetChildren()) do
+        local podiumsFolder = plot:FindFirstChild("AnimalPodiums")
+        if podiumsFolder then
+            for _, pod in ipairs(podiumsFolder:GetChildren()) do
+                local caminho = pod:FindFirstChild("Base")
+                if caminho then
+                    local spawn = caminho:FindFirstChild("Spawn")
+                    if spawn then
+                        local attachment = spawn:FindFirstChild("Attachment")
+                        if attachment then
+                            local overhead = attachment:FindFirstChild("AnimalOverhead")
+                            if overhead then
+                                local displayName = overhead:FindFirstChild("DisplayName")
+                                if displayName then
+                                    local valor = nil
+                                    if displayName:IsA("StringValue") then
+                                        valor = displayName.Value
+                                    elseif displayName:IsA("TextLabel") or displayName:IsA("TextBox") or displayName:IsA("TextButton") then
+                                        valor = displayName.Text
+                                    end
+
+                                    local caminhoCompleto = plot.Name .. "/" .. pod.Name .. "/Base/Spawn/Attachment/AnimalOverhead/DisplayName"
+                                    print("🔍 Encontrado:", caminhoCompleto)
+                                    if valor then
+                                        print("📄 Valor:", valor)
+                                        if contemPalavraChave(valor) then
+                                            warn("⚠️ Valor suspeito em", caminhoCompleto, "→", valor)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    print("\n✅ Varredura concluída.")
 end
 
-UserInputService.InputBegan:Connect(function(input, processed)
-	if processed then return end
-	if input.KeyCode == Enum.KeyCode.E then
-		local prompt, dist = getNearbyPrompt()
-		if prompt then
-			print("🛰️ Detectado objeto interativo por perto!")
-			print("📌 Nome:", prompt.Parent.Name)
-			print("📏 Distância:", math.floor(dist) .. " studs")
-			print("💲 Texto do botão:", prompt.ObjectText, prompt.ActionText)
-			-- prompt:InputHoldBegin() não funciona no client, só simula
-		else
-			print("⚠️ Nenhum objeto interativo próximo.")
-		end
-	end
-end)
+verificarDisplayNames()
