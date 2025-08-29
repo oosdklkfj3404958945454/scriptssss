@@ -54,26 +54,20 @@ local function checkKey()
     end)
     if not success or not response then
         prints("❌ Erro ao acessar o banco de dados de keys.")
-        warn("[KeySystem][Erro HttpGet Key]:", response)
         return false
     end
-
-    prints("[Depuração][KeySystem] Conteúdo bruto do Firebase (mobile.json):\n" .. tostring(response))
 
     local successDecode, data = pcall(function()
         return HttpService:JSONDecode(response)
     end)
     if not successDecode or not data then
         prints("❌ Erro ao decodificar dados de keys.")
-        warn("[KeySystem][Erro JSONDecode Key]:", data)
         return false
     end
 
     local expires, nicks = parseKeyData(data)
     if not expires then
         prints("❌ Key inválida ou não encontrada.")
-        prints("[Depuração][KeySystem] Dados decodificados (mobile.json):")
-        warn(data)
         return false
     end
 
@@ -95,7 +89,6 @@ local function checkKey()
         return true
     else
         prints("⚠️ Key válida, mas seu nick NÃO está autorizado!")
-        prints("[Depuração][KeySystem] Lista de nicks autorizados para a key: " .. table.concat(nicks, ", "))
         return false
     end
 end
@@ -107,11 +100,8 @@ local function readJobID()
 
     if not success or not response then
         prints("❌ Erro ao buscar JobID do site.")
-        warn("[KeySystem][Erro HttpGet JobID]:", response)
         return nil
     end
-
-    prints("[Depuração][KeySystem] Conteúdo bruto do Firebase (ccc.json):\n" .. tostring(response))
 
     local successDecode, data = pcall(function()
         return HttpService:JSONDecode(response)
@@ -119,27 +109,24 @@ local function readJobID()
 
     if not successDecode or not data then
         prints("❌ Erro ao decodificar dados do JobID.")
-        warn("[KeySystem][Erro JSONDecode JobID]:", data)
         return nil
     end
 
     -- Se for string pura, retorna direto
     if typeof(data) == "string" and data ~= "" then
         local jobID = data:gsub("%s+", "")
-        prints("🔎 JobID encontrado: " .. jobID)
+        prints("🔎 JobID encontrado!")
         return jobID
     end
 
     -- Se for objeto, busca o campo job_id
     if typeof(data) == "table" and data.job_id and data.job_id ~= "" then
         local jobID = data.job_id:gsub("%s+", "")
-        prints("🔎 JobID encontrado: " .. jobID)
+        prints("🔎 JobID encontrado!")
         return jobID
     end
 
     prints("❌ JobID não encontrado no site.")
-    prints("[Depuração][KeySystem] Dados decodificados (ccc.json):")
-    warn(data)
     return nil
 end
 
